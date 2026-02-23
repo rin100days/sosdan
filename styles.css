@@ -177,6 +177,13 @@ body {
   background: #eef3ff;
 }
 
+
+#syncStatus {
+  display: block;
+  margin-top: 4px;
+  color: #23357a;
+}
+
 .locked-form {
   opacity: 0.55;
   pointer-events: none;
