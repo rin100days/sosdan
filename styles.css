@@ -34,6 +34,23 @@ body {
   box-shadow: inset 0 -6px 0 #f5a700;
 }
 
+
+.sos-emblem {
+  width: min(360px, 80vw);
+  display: block;
+  margin: 0 auto 8px;
+  border: 3px solid #000;
+  box-shadow: 3px 3px 0 #fff;
+  background: #fff2a7;
+}
+
+.mini-logo {
+  width: 100%;
+  border: 2px solid #111;
+  margin-bottom: 8px;
+  background: #fff;
+}
+
 .logo-wrap {
   font-weight: 900;
   font-size: clamp(2.8rem, 7vw, 5rem);

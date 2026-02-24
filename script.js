@@ -1,18 +1,10 @@
 (function () {
-  const STORAGE = {
-    counter: "sosdan_counter",
-    notices: "sosdan_notices",
-    joins: "sosdan_joins",
-    bbs: "sosdan_bbs",
-  };
-
-  // demo admin (실서비스는 서버 인증으로 교체 권장)
   const ADMIN_ID = "admin";
   const ADMIN_PASSWORD = "sos2006";
 
-  // Supabase 연결값 입력 시 공유 모드 활성화
-  const SUPABASE_URL = "";
-  const SUPABASE_ANON_KEY = "";
+  const config = window.SOSDAN_CONFIG || {};
+  const SUPABASE_URL = (config.supabaseUrl || "").trim();
+  const SUPABASE_ANON_KEY = (config.supabaseAnonKey || "").trim();
 
   const remoteEnabled = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
   let isAdmin = false;
@@ -30,21 +22,6 @@
   const setText = (id, text) => {
     const el = document.getElementById(id);
     if (el) el.textContent = text;
-  };
-
-  const loadLocalList = (key, fallback) => {
-    try {
-      const raw = localStorage.getItem(key);
-      if (!raw) return fallback;
-      const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed : fallback;
-    } catch {
-      return fallback;
-    }
-  };
-
-  const saveLocalList = (key, value) => {
-    localStorage.setItem(key, JSON.stringify(value));
   };
 
   const headers = {
@@ -90,6 +67,16 @@
     });
   };
 
+  const setSharedModeStatus = () => {
+    if (remoteEnabled) {
+      setText("syncStatus", "저장소: Supabase 공유 모드");
+      return;
+    }
+    setText("syncStatus", "저장소: Supabase 미설정 (공유 기능 비활성)");
+    setText("counterStatus", "Supabase 설정 필요");
+    alert("공유 기능을 사용하려면 index.html의 SOSDAN_CONFIG(Supabase URL/Anon Key)를 설정하세요.");
+  };
+
   const setupAdminAuth = ({ refreshJoinList, setNoticeFormState }) => {
     const form = document.getElementById("adminLoginForm");
     const logoutBtn = document.getElementById("adminLogoutBtn");
@@ -100,7 +87,7 @@
       setText("adminStatus", `관리자 상태: ${isAdmin ? "로그인" : "로그아웃"}`);
       if (logoutBtn) logoutBtn.classList.toggle("hidden", !isAdmin);
       if (form) form.classList.toggle("hidden", isAdmin);
-      setNoticeFormState(isAdmin);
+      setNoticeFormState(isAdmin && remoteEnabled);
       refreshJoinList();
     };
 
@@ -134,35 +121,30 @@
     const counterEl = document.getElementById("counter");
     if (!counterEl) return;
 
-    if (remoteEnabled) {
-      try {
-        const rows = await fetchRemote("sos_metrics", 1);
-        let metric = rows[0];
-        if (!metric) {
-          const created = await insertRemote("sos_metrics", { total_visits: 1 });
-          metric = created[0] || { total_visits: 1 };
-        } else {
-          const next = Number(metric.total_visits || 0) + 1;
-          const updated = await updateRemoteById("sos_metrics", metric.id, { total_visits: next });
-          metric = updated[0] || { total_visits: next };
-        }
-
-        const total = Number(metric.total_visits || 1);
-        counterEl.textContent = String(total).padStart(6, "0");
-        setText("counterStatus", "실시간 전역 접속자수 (Supabase)");
-        setText("syncStatus", "저장소: Supabase 공유 모드");
-        return;
-      } catch {
-        setText("counterStatus", "원격 집계 실패 · local 대체");
-      }
+    if (!remoteEnabled) {
+      counterEl.textContent = "------";
+      return;
     }
 
-    const initial = 42;
-    const saved = Number(localStorage.getItem(STORAGE.counter));
-    const count = Number.isFinite(saved) && saved > 0 ? saved + 1 : initial;
-    localStorage.setItem(STORAGE.counter, String(count));
-    counterEl.textContent = String(count).padStart(6, "0");
-    setText("syncStatus", "저장소: local 모드");
+    try {
+      const rows = await fetchRemote("sos_metrics", 1);
+      let metric = rows[0];
+      if (!metric) {
+        const created = await insertRemote("sos_metrics", { total_visits: 1 });
+        metric = created[0] || { total_visits: 1 };
+      } else {
+        const next = Number(metric.total_visits || 0) + 1;
+        const updated = await updateRemoteById("sos_metrics", metric.id, { total_visits: next });
+        metric = updated[0] || { total_visits: next };
+      }
+
+      const total = Number(metric.total_visits || 1);
+      counterEl.textContent = String(total).padStart(6, "0");
+      setText("counterStatus", "실시간 전역 접속자수 (Supabase)");
+    } catch {
+      counterEl.textContent = "ERR500";
+      setText("counterStatus", "원격 집계 실패");
+    }
   };
 
   const setupNotice = async () => {
@@ -188,26 +170,28 @@
     };
 
     const reload = async () => {
-      const defaults = [{ title: "환영", content: "SOS단 공식(?) 홈페이지 오픈!", createdAt: formatNow() }];
-      if (remoteEnabled) {
-        try {
-          const rows = await fetchRemote("sos_notices", 20);
-          notices = rows.map((row) => ({
-            title: row.title || "",
-            content: row.content || "",
-            createdAt: row.created_at ? new Date(row.created_at).toLocaleString("ko-KR", { hour12: false }) : formatNow(),
-          }));
-        } catch {
-          notices = loadLocalList(STORAGE.notices, defaults);
-        }
-      } else {
-        notices = loadLocalList(STORAGE.notices, defaults);
+      if (!remoteEnabled) {
+        notices = [{ title: "Supabase 연결 필요", content: "공지 공유 기능을 활성화하려면 설정을 입력하세요.", createdAt: formatNow() }];
+        draw();
+        return;
+      }
+
+      try {
+        const rows = await fetchRemote("sos_notices", 20);
+        notices = rows.map((row) => ({
+          title: row.title || "",
+          content: row.content || "",
+          createdAt: row.created_at ? new Date(row.created_at).toLocaleString("ko-KR", { hour12: false }) : formatNow(),
+        }));
+      } catch {
+        notices = [{ title: "공지 로딩 실패", content: "Supabase 연결 상태를 확인해주세요.", createdAt: formatNow() }];
       }
       draw();
     };
 
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
+      if (!remoteEnabled) return;
       if (!isAdmin) {
         alert("관리자 로그인 후 작성 가능합니다.");
         return;
@@ -217,21 +201,11 @@
       const content = contentInput.value.trim();
       if (!title || !content) return;
 
-      if (remoteEnabled) {
-        try {
-          await insertRemote("sos_notices", { title, content });
-          await reload();
-        } catch {
-          notices.unshift({ title, content, createdAt: formatNow() });
-          notices = notices.slice(0, 20);
-          saveLocalList(STORAGE.notices, notices);
-          draw();
-        }
-      } else {
-        notices.unshift({ title, content, createdAt: formatNow() });
-        notices = notices.slice(0, 20);
-        saveLocalList(STORAGE.notices, notices);
-        draw();
+      try {
+        await insertRemote("sos_notices", { title, content });
+        await reload();
+      } catch {
+        alert("공지 등록 실패: Supabase를 확인해주세요.");
       }
 
       form.reset();
@@ -258,7 +232,7 @@
         listEl,
         joins,
         (item) => {
-          const controls = isAdmin
+          const controls = isAdmin && remoteEnabled
             ? `<div class="join-actions">
                  <button class="approve-btn" data-action="approve" data-id="${item.id}">승인</button>
                  <button class="reject-btn" data-action="reject" data-id="${item.id}">보류</button>
@@ -273,49 +247,42 @@
     };
 
     const reload = async () => {
-      const defaults = [{ id: Date.now(), name: "익명 단원", type: "평범한 고등학생", message: "재밌는 사건 찾아오겠습니다!", status: "pending", createdAt: formatNow() }];
-      if (remoteEnabled) {
-        try {
-          const rows = await fetchRemote("sos_joins", 30);
-          joins = rows.map((row) => ({
-            id: row.id,
-            name: row.name || "",
-            type: row.category || "",
-            message: row.message || "",
-            status: row.status || "pending",
-            createdAt: row.created_at ? new Date(row.created_at).toLocaleString("ko-KR", { hour12: false }) : formatNow(),
-          }));
-        } catch {
-          joins = loadLocalList(STORAGE.joins, defaults);
-        }
-      } else {
-        joins = loadLocalList(STORAGE.joins, defaults);
+      if (!remoteEnabled) {
+        joins = [{ id: 0, name: "연결 필요", type: "-", message: "Supabase 설정 후 입단 신청 공유가 활성화됩니다.", status: "offline", createdAt: formatNow() }];
+        draw();
+        return;
+      }
+
+      try {
+        const rows = await fetchRemote("sos_joins", 30);
+        joins = rows.map((row) => ({
+          id: row.id,
+          name: row.name || "",
+          type: row.category || "",
+          message: row.message || "",
+          status: row.status || "pending",
+          createdAt: row.created_at ? new Date(row.created_at).toLocaleString("ko-KR", { hour12: false }) : formatNow(),
+        }));
+      } catch {
+        joins = [{ id: 0, name: "로딩 실패", type: "-", message: "입단 목록을 가져오지 못했습니다.", status: "error", createdAt: formatNow() }];
       }
       draw();
     };
 
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
+      if (!remoteEnabled) return;
+
       const name = nameInput.value.trim();
       const type = typeInput.value;
       const message = msgInput.value.trim();
       if (!name || !message) return;
 
-      if (remoteEnabled) {
-        try {
-          await insertRemote("sos_joins", { name, category: type, message, status: "pending" });
-          await reload();
-        } catch {
-          joins.unshift({ id: Date.now(), name, type, message, status: "pending", createdAt: formatNow() });
-          joins = joins.slice(0, 30);
-          saveLocalList(STORAGE.joins, joins);
-          draw();
-        }
-      } else {
-        joins.unshift({ id: Date.now(), name, type, message, status: "pending", createdAt: formatNow() });
-        joins = joins.slice(0, 30);
-        saveLocalList(STORAGE.joins, joins);
-        draw();
+      try {
+        await insertRemote("sos_joins", { name, category: type, message, status: "pending" });
+        await reload();
+      } catch {
+        alert("입단 신청 등록 실패: Supabase 연결을 확인해주세요.");
       }
 
       form.reset();
@@ -326,23 +293,15 @@
       if (!(target instanceof HTMLElement)) return;
       const action = target.dataset.action;
       const id = Number(target.dataset.id);
-      if (!action || !id || !isAdmin) return;
+      if (!action || !id || !isAdmin || !remoteEnabled) return;
 
       const nextStatus = action === "approve" ? "approved" : "pending";
 
-      if (remoteEnabled) {
-        try {
-          await updateRemoteById("sos_joins", id, { status: nextStatus });
-          await reload();
-        } catch {
-          joins = joins.map((item) => (item.id === id ? { ...item, status: nextStatus } : item));
-          saveLocalList(STORAGE.joins, joins);
-          draw();
-        }
-      } else {
-        joins = joins.map((item) => (item.id === id ? { ...item, status: nextStatus } : item));
-        saveLocalList(STORAGE.joins, joins);
-        draw();
+      try {
+        await updateRemoteById("sos_joins", id, { status: nextStatus });
+        await reload();
+      } catch {
+        alert("상태 변경 실패: Supabase 연결을 확인해주세요.");
       }
     });
 
@@ -369,48 +328,38 @@
     };
 
     const reload = async () => {
-      const defaults = [
-        { name: "단장최고", message: "이번 주말 불가사의 탐사 갑니다!", createdAt: formatNow() },
-        { name: "미쿠루짱팬77", message: "메이드 사진 업로드 일정 공지 부탁해요", createdAt: formatNow() },
-      ];
-      if (remoteEnabled) {
-        try {
-          const rows = await fetchRemote("sos_bbs", 40);
-          posts = rows.map((row) => ({
-            name: row.name || "",
-            message: row.message || "",
-            createdAt: row.created_at ? new Date(row.created_at).toLocaleString("ko-KR", { hour12: false }) : formatNow(),
-          }));
-        } catch {
-          posts = loadLocalList(STORAGE.bbs, defaults);
-        }
-      } else {
-        posts = loadLocalList(STORAGE.bbs, defaults);
+      if (!remoteEnabled) {
+        posts = [{ name: "연결 필요", message: "자유게시판 공유를 사용하려면 Supabase를 설정하세요.", createdAt: formatNow() }];
+        draw();
+        return;
+      }
+
+      try {
+        const rows = await fetchRemote("sos_bbs", 40);
+        posts = rows.map((row) => ({
+          name: row.name || "",
+          message: row.message || "",
+          createdAt: row.created_at ? new Date(row.created_at).toLocaleString("ko-KR", { hour12: false }) : formatNow(),
+        }));
+      } catch {
+        posts = [{ name: "오류", message: "게시판을 불러오지 못했습니다.", createdAt: formatNow() }];
       }
       draw();
     };
 
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
+      if (!remoteEnabled) return;
+
       const name = nameInput.value.trim();
       const message = msgInput.value.trim();
       if (!name || !message) return;
 
-      if (remoteEnabled) {
-        try {
-          await insertRemote("sos_bbs", { name, message });
-          await reload();
-        } catch {
-          posts.unshift({ name, message, createdAt: formatNow() });
-          posts = posts.slice(0, 40);
-          saveLocalList(STORAGE.bbs, posts);
-          draw();
-        }
-      } else {
-        posts.unshift({ name, message, createdAt: formatNow() });
-        posts = posts.slice(0, 40);
-        saveLocalList(STORAGE.bbs, posts);
-        draw();
+      try {
+        await insertRemote("sos_bbs", { name, message });
+        await reload();
+      } catch {
+        alert("게시글 등록 실패: Supabase 연결을 확인해주세요.");
       }
 
       form.reset();
@@ -420,6 +369,7 @@
   };
 
   const init = async () => {
+    setSharedModeStatus();
     await setupCounter();
     const notice = await setupNotice();
     const join = await setupJoin();

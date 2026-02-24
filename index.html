@@ -10,6 +10,7 @@
     <div class="noise"></div>
 
     <header class="top-banner">
+      <img class="sos-emblem" src="assets/sos-logo.svg" alt="SOS단 로고 엠블럼" />
       <div class="logo-wrap" aria-label="SOS단 로고">
         <span class="logo-s">S</span>
         <span class="logo-o">O</span>
@@ -50,7 +51,7 @@
 
           <div class="notice-admin">
             <small id="adminStatus">관리자 상태: 로그아웃</small>
-            <small id="syncStatus">저장소: local 모드</small>
+            <small id="syncStatus">저장소: 공유 서버 연결 확인 중</small>
           </div>
 
           <form id="noticeForm" class="locked-form">
@@ -131,6 +132,7 @@
 
         <div class="box stamp-box">
           <h3>BANNER</h3>
+          <img class="mini-logo" src="assets/sos-logo.svg" alt="SOS 배너 로고" />
           <div class="stamp">SOS</div>
           <small>2000s web ring ready</small>
         </div>
@@ -141,6 +143,13 @@
       <marquee scrollamount="4">Copyright © SOS단. All rights maybe reserved.</marquee>
     </footer>
 
+    <script>
+      window.SOSDAN_CONFIG = {
+        // 여기에 Supabase 값을 넣으면 모든 사용자에게 공지/입단/게시판이 공유됩니다.
+        supabaseUrl: "",
+        supabaseAnonKey: "",
+      };
+    </script>
     <script src="script.js"></script>
   </body>
 </html>

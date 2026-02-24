@@ -1,8 +1,8 @@
 # SOS단 정적 웹사이트
 
-## 공유 DB 모드(2번) 사용법
-기본은 localStorage 모드입니다.
-여러 사람이 같은 공지/입단/게시판/접속자수를 보려면 Supabase를 연결하세요.
+## 공유 모드(Supabase) 설정
+이 버전은 **로컬 자동 폴백 없이** Supabase 공유 저장소를 기준으로 동작합니다.
+즉, Supabase를 설정해야 다른 사람이 쓴 공지/입단/게시판/접속자수를 모두 함께 볼 수 있습니다.
 
 ### 1) Supabase 테이블 생성
 SQL Editor에서 아래 실행:
@@ -60,13 +60,13 @@ create policy "public insert metrics" on sos_metrics for insert with check (true
 create policy "public update metrics" on sos_metrics for update using (true) with check (true);
 ```
 
-### 3) `script.js` 설정
-`script.js`의 아래 상수 값을 채우세요.
+### 3) `index.html` 설정
+`index.html` 하단의 `window.SOSDAN_CONFIG` 값을 채우세요.
 
-- `SUPABASE_URL`
-- `SUPABASE_ANON_KEY`
+- `supabaseUrl`
+- `supabaseAnonKey`
 
-값이 비어있으면 local 모드로 동작합니다.
+값이 비어 있으면 공유 기능은 비활성 상태로 표시됩니다.
 
 ### 4) 관리자 로그인
 현재 데모 로그인 정보:
@@ -76,7 +76,8 @@ create policy "public update metrics" on sos_metrics for update using (true) wit
 > 프론트 코드에 들어있는 데모 인증이라 보안용이 아닙니다. 실서비스는 서버 인증으로 교체하세요.
 
 ## 기능
-- 공지사항: 관리자 로그인 시 작성 가능
+- 공지사항: 관리자 로그인 시 작성 가능 (Supabase 공유)
 - 입단 신청: 누구나 신청 가능, 관리자는 승인/보류 가능
 - 자유게시판: 누구나 글 작성 가능
-- 접속자수: Supabase 연결 시 전역 집계
+- 접속자수: Supabase 전역 집계
+- 로고: 헤더/배너에 SOS단 로고 표시
