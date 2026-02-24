@@ -396,6 +396,36 @@
     await reload();
   };
 
+
+  const setupCopyBanner = () => {
+    const copyBtn = document.getElementById("copySiteBanner");
+    const feedback = document.getElementById("copyFeedback");
+    if (!copyBtn) return;
+
+    copyBtn.addEventListener("click", async () => {
+      const urlToCopy = `${window.location.origin}${window.location.pathname}`;
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(urlToCopy);
+        } else {
+          const helper = document.createElement("textarea");
+          helper.value = urlToCopy;
+          helper.style.position = "fixed";
+          helper.style.opacity = "0";
+          document.body.appendChild(helper);
+          helper.focus();
+          helper.select();
+          document.execCommand("copy");
+          helper.remove();
+        }
+
+        if (feedback) feedback.textContent = `복사 완료: ${urlToCopy}`;
+      } catch {
+        if (feedback) feedback.textContent = "복사 실패: 브라우저 권한을 확인하세요.";
+      }
+    });
+  };
+
   const init = async () => {
     await verifyRemoteConnection();
     await setupCounter();
@@ -407,6 +437,7 @@
       refreshJoinList: join.refreshJoinList,
       setNoticeFormState: notice.setNoticeFormState,
     });
+    setupCopyBanner();
   };
 
   init();
