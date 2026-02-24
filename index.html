@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SOS단 웹사이트</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="noise"></div>
+
+    <header class="top-banner">
+      <img class="sos-emblem" src="assets/sos-logo.svg" alt="SOS단 로고 엠블럼" />
+      <p class="subtitle">Spreading Excitement all Over the World with Haruhi Suzumiya Brigade</p>
+      <marquee behavior="alternate" scrollamount="5">우주인 · 미래인 · 초능력자 · 이세계인 모집중! 비범한 사건 제보 환영</marquee>
+      <button id="copySiteBanner" class="copy-banner" type="button" aria-label="사이트 주소 복사 배너">
+        <img src="assets/sos-logo.svg" alt="SOS단 배너" />
+        <span>배너 클릭: 이 사이트 주소 복사</span>
+      </button>
+    </header>
+
+    <main class="frame">
+      <aside class="left-nav panel">
+        <h2>MENU</h2>
+        <ul>
+          <li><a href="#/ko">TOP</a></li>
+          <li><a href="#notice">공지사항</a></li>
+          <li><a href="#members">단원명부</a></li>
+          <li><a href="#join">입단신청</a></li>
+          <li><a href="#bbs">자유게시판</a></li>
+        </ul>
+
+        <section class="counter-box">
+          <h3>ACCESS COUNTER</h3>
+          <div class="counter" id="counter">000000</div>
+          <small id="counterStatus">접속자 집계 준비 중</small>
+        </section>
+      </aside>
+
+      <section class="content panel">
+        <div class="window-title">SOS단 본부 :: WEB SITE</div>
+
+        <article class="hero box" id="notice">
+          <h1>SOS단 공지사항</h1>
+          <p>
+            <strong>평범함 금지!</strong><br />
+            관리자 로그인 상태에서만 공지 작성 및 입단 승인 관리가 가능합니다.
+          </p>
+
+          <div class="notice-admin">
+            <small id="adminStatus">관리자 상태: 로그아웃</small>
+            <small id="syncStatus">저장소: 공유 서버 연결 확인 중</small>
+          </div>
+
+          <form id="noticeForm" class="locked-form">
+            <label>공지 제목 <input id="noticeTitle" type="text" placeholder="예: 이번 주말 불가사의 탐사" /></label>
+            <label>공지 내용 <textarea id="noticeContent" rows="3" placeholder="단장 공지 내용을 입력하세요"></textarea></label>
+            <button type="submit">공지 등록</button>
+          </form>
+
+          <ul id="noticeList" class="post-list"></ul>
+        </article>
+
+        <article class="box" id="members">
+          <h2>단원 소개</h2>
+          <table>
+            <tr><th>이름</th><th>직책</th><th>한마디</th></tr>
+            <tr><td>스즈미야 하루히</td><td>단장</td><td>재미없는 세상은 내가 바꿔버릴 거야.</td></tr>
+            <tr><td>코이즈미 이츠키</td><td>부단장</td><td>흥미로운 전개네요.</td></tr>
+            <tr><td>아사히나 미쿠루</td><td>부부단장</td><td>차... 드릴까요...?</td></tr>
+            <tr><td>나가토 유키</td><td>독서 담당</td><td>필요하면 말해.</td></tr>
+            <tr><td>쿈</td><td>잡무 전담</td><td>또 내가 해야 해?</td></tr>
+          </table>
+        </article>
+
+        <article class="box" id="join">
+          <h2>입단 신청서</h2>
+          <form id="joinForm">
+            <label>이름 <input id="joinName" type="text" placeholder="닉네임 가능" /></label>
+            <label>정체
+              <select id="joinType">
+                <option>평범한 고등학생</option>
+                <option>외계인</option>
+                <option>미래인</option>
+                <option>초능력자</option>
+              </select>
+            </label>
+            <label>메시지 <textarea id="joinMessage" rows="3" placeholder="사건 제보 / 입단 포부"></textarea></label>
+            <button type="submit">입단 신청 보내기</button>
+          </form>
+          <ul id="joinList" class="post-list"></ul>
+        </article>
+
+        <article class="box" id="bbs">
+          <h2>자유게시판</h2>
+          <form id="bbsForm">
+            <label>닉네임 <input id="bbsName" type="text" placeholder="닉네임" /></label>
+            <label>내용 <textarea id="bbsMessage" rows="2" placeholder="자유롭게 남겨주세요"></textarea></label>
+            <button type="submit">글쓰기</button>
+          </form>
+          <ul id="bbsList" class="post-list"></ul>
+        </article>
+      </section>
+
+      <aside class="right-panel panel">
+        <div class="box">
+          <h3>NOW PLAYING</h3>
+          <p>♪ 추천곡 재생</p>
+          <div class="player-wrap">
+            <iframe
+              src="https://www.youtube.com/embed/KkK7mau3b1w?autoplay=1&mute=1&loop=1&playlist=KkK7mau3b1w"
+              title="SOS단 추천곡"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen
+            ></iframe>
+          </div>
+          <small>브라우저 정책상 자동재생이 막히면 ▶ 버튼을 눌러주세요.</small>
+        </div>
+
+        <div class="box" id="adminBox">
+          <h3>관리자 센터</h3>
+          <form id="adminLoginForm">
+            <label>아이디 <input id="adminId" type="text" placeholder="admin" /></label>
+            <label>비밀번호 <input id="adminPw" type="password" placeholder="password" /></label>
+            <button type="submit">로그인</button>
+          </form>
+          <button id="adminLogoutBtn" type="button" class="hidden">로그아웃</button>
+          <small>데모 계정: admin / sos2006</small>
+        </div>
+
+        <div class="box stamp-box">
+          <h3>SOS BANNER</h3>
+          <img class="mini-logo" src="assets/sos-logo.svg" alt="SOS 배너 로고" />
+          <small id="copyFeedback">배너 클릭으로 URL 복사 가능</small>
+          <div class="stamp">SOS</div>
+          <small>2000s web ring ready</small>
+        </div>
+      </aside>
+    </main>
+
+    <footer>
+      <marquee scrollamount="4">Copyright © SOS단. All rights maybe reserved.</marquee>
+    </footer>
+
+    <script>
+      window.SOSDAN_CONFIG = {
+        // 여기에 Supabase 값을 넣으면 모든 사용자에게 공지/입단/게시판이 공유됩니다.
+        supabaseUrl: "",
+        supabaseAnonKey: "",
+      };
+    </script>
+    <script src="script.js"></script>
+  </body>
+</html>

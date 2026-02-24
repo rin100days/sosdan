@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 180" role="img" aria-labelledby="t d">
+  <title id="t">SOS단 로고</title>
+  <desc id="d">노란 바탕 위 붉은 SOS와 검정 단 텍스트 로고</desc>
+  <defs>
+    <linearGradient id="y" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#ffe56a"/>
+      <stop offset="1" stop-color="#f7c41c"/>
+    </linearGradient>
+  </defs>
+  <rect width="480" height="180" rx="14" fill="url(#y)" stroke="#111" stroke-width="8"/>
+  <g font-family="Impact, Arial Black, sans-serif" font-weight="900" text-anchor="middle">
+    <text x="200" y="125" font-size="132" fill="#d80000" stroke="#111" stroke-width="8">SOS</text>
+    <text x="385" y="125" font-size="118" fill="#111">단</text>
+  </g>
+</svg>
