@@ -75,15 +75,27 @@ create policy "public insert metrics" on sos_metrics for insert with check (true
 create policy "public update metrics" on sos_metrics for update using (true) with check (true);
 ```
 
-### 3) `index.html` 설정
+### 3) Project URL / Anon Key 찾기
+Supabase 대시보드에서 아래 경로로 확인할 수 있습니다.
+
+- **Settings → API → Project URL** (=`supabaseUrl`)
+- **Settings → API → Project API keys → anon public** (=`supabaseAnonKey`)
+
+### 4) `index.html` 설정
 `index.html` 하단의 `window.SOSDAN_CONFIG` 값을 채우세요.
 
-- `supabaseUrl`
-- `supabaseAnonKey`
+```html
+<script>
+  window.SOSDAN_CONFIG = {
+    supabaseUrl: "https://YOUR_PROJECT.supabase.co",
+    supabaseAnonKey: "YOUR_ANON_PUBLIC_KEY",
+  };
+</script>
+```
 
 값이 비어 있으면 공유 기능은 비활성 상태로 표시됩니다.
 
-### 4) 관리자 로그인
+### 5) 관리자 로그인
 현재 데모 로그인 정보:
 - ID: `admin`
 - PW: `sos2006`
