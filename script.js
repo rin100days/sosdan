@@ -3,7 +3,7 @@
   const ADMIN_PASSWORD = "sos2006";
 
   const config = window.SOSDAN_CONFIG || {};
-  const SUPABASE_URL = (config.supabaseUrl || "").trim();
+  const SUPABASE_URL = (config.supabaseUrl || "").trim().replace(/\/$/, "");
   const SUPABASE_ANON_KEY = (config.supabaseAnonKey || "").trim();
 
   const remoteEnabled = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
@@ -22,6 +22,12 @@
   const setText = (id, text) => {
     const el = document.getElementById(id);
     if (el) el.textContent = text;
+  };
+
+  const setSyncStatus = (text, isError = false) => {
+    setText("syncStatus", `저장소: ${text}`);
+    const el = document.getElementById("syncStatus");
+    if (el) el.classList.toggle("status-error", isError);
   };
 
   const headers = {
@@ -57,6 +63,37 @@
     return res.json();
   };
 
+  const verifyRemoteConnection = async () => {
+    if (!remoteEnabled) {
+      setSyncStatus("Supabase 미설정 (index.html 설정 필요)", true);
+      setText("counterStatus", "Supabase 설정 필요");
+      return;
+    }
+
+    setSyncStatus("공유 서버 연결 확인 중...");
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/sos_notices?select=id&limit=1`, { headers });
+      if (res.ok) {
+        setSyncStatus("Supabase 공유 모드 연결됨");
+        return;
+      }
+
+      if (res.status === 401 || res.status === 403) {
+        setSyncStatus("인증 실패 (Project URL / anon key / RLS 정책 확인)", true);
+        return;
+      }
+
+      if (res.status === 404) {
+        setSyncStatus("API 경로 오류 (Project URL 확인 필요)", true);
+        return;
+      }
+
+      setSyncStatus(`연결 실패 (HTTP ${res.status})`, true);
+    } catch {
+      setSyncStatus("연결 실패 (네트워크 또는 CORS 오류)", true);
+    }
+  };
+
   const renderList = (target, items, mapper) => {
     if (!target) return;
     target.innerHTML = "";
@@ -65,16 +102,6 @@
       li.innerHTML = mapper(item);
       target.appendChild(li);
     });
-  };
-
-  const setSharedModeStatus = () => {
-    if (remoteEnabled) {
-      setText("syncStatus", "저장소: Supabase 공유 모드");
-      return;
-    }
-    setText("syncStatus", "저장소: Supabase 미설정 (공유 기능 비활성)");
-    setText("counterStatus", "Supabase 설정 필요");
-    alert("공유 기능을 사용하려면 index.html의 SOSDAN_CONFIG(Supabase URL/Anon Key)를 설정하세요.");
   };
 
   const setupAdminAuth = ({ refreshJoinList, setNoticeFormState }) => {
@@ -94,11 +121,11 @@
     if (form && idInput && pwInput) {
       form.addEventListener("submit", (event) => {
         event.preventDefault();
-        const id = idInput.value.trim();
-        const pw = pwInput.value;
+        const id = idInput.value.trim().toLowerCase();
+        const pw = pwInput.value.trim();
         isAdmin = id === ADMIN_ID && pw === ADMIN_PASSWORD;
         if (!isAdmin) {
-          alert("관리자 로그인 실패");
+          alert("관리자 로그인 실패: 아이디/비밀번호를 확인하세요. (demo: admin / sos2006)");
           return;
         }
         idInput.value = "";
@@ -143,7 +170,7 @@
       setText("counterStatus", "실시간 전역 접속자수 (Supabase)");
     } catch {
       counterEl.textContent = "ERR500";
-      setText("counterStatus", "원격 집계 실패");
+      setText("counterStatus", "원격 집계 실패 (RLS 정책 확인)");
     }
   };
 
@@ -184,7 +211,7 @@
           createdAt: row.created_at ? new Date(row.created_at).toLocaleString("ko-KR", { hour12: false }) : formatNow(),
         }));
       } catch {
-        notices = [{ title: "공지 로딩 실패", content: "Supabase 연결 상태를 확인해주세요.", createdAt: formatNow() }];
+        notices = [{ title: "공지 로딩 실패", content: "Supabase/RLS 상태를 확인해주세요.", createdAt: formatNow() }];
       }
       draw();
     };
@@ -205,7 +232,7 @@
         await insertRemote("sos_notices", { title, content });
         await reload();
       } catch {
-        alert("공지 등록 실패: Supabase를 확인해주세요.");
+        alert("공지 등록 실패: Supabase/RLS 정책을 확인해주세요.");
       }
 
       form.reset();
@@ -232,12 +259,13 @@
         listEl,
         joins,
         (item) => {
-          const controls = isAdmin && remoteEnabled
-            ? `<div class="join-actions">
-                 <button class="approve-btn" data-action="approve" data-id="${item.id}">승인</button>
-                 <button class="reject-btn" data-action="reject" data-id="${item.id}">보류</button>
-               </div>`
-            : "";
+          const controls =
+            isAdmin && remoteEnabled
+              ? `<div class="join-actions">
+                   <button class="approve-btn" data-action="approve" data-id="${item.id}">승인</button>
+                   <button class="reject-btn" data-action="reject" data-id="${item.id}">보류</button>
+                 </div>`
+              : "";
           return `<strong>${escapeHtml(item.name)}</strong> (${escapeHtml(item.type)})
                   <span class="join-status">${escapeHtml(item.status)}</span>
                   <span class="post-meta">${escapeHtml(item.createdAt)}</span>
@@ -282,7 +310,7 @@
         await insertRemote("sos_joins", { name, category: type, message, status: "pending" });
         await reload();
       } catch {
-        alert("입단 신청 등록 실패: Supabase 연결을 확인해주세요.");
+        alert("입단 신청 등록 실패: Supabase/RLS 정책을 확인해주세요.");
       }
 
       form.reset();
@@ -301,7 +329,7 @@
         await updateRemoteById("sos_joins", id, { status: nextStatus });
         await reload();
       } catch {
-        alert("상태 변경 실패: Supabase 연결을 확인해주세요.");
+        alert("상태 변경 실패: Supabase/RLS 정책을 확인해주세요.");
       }
     });
 
@@ -359,7 +387,7 @@
         await insertRemote("sos_bbs", { name, message });
         await reload();
       } catch {
-        alert("게시글 등록 실패: Supabase 연결을 확인해주세요.");
+        alert("게시글 등록 실패: Supabase/RLS 정책을 확인해주세요.");
       }
 
       form.reset();
@@ -369,7 +397,7 @@
   };
 
   const init = async () => {
-    setSharedModeStatus();
+    await verifyRemoteConnection();
     await setupCounter();
     const notice = await setupNotice();
     const join = await setupJoin();

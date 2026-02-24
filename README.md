@@ -53,7 +53,10 @@ create table if not exists sos_metrics (
 );
 ```
 
-### 2) RLS 정책 (데모용 공개)
+### 2) RLS 정책 (Security Advisor 오류 해결)
+
+Supabase Security Advisor에 `RLS Disabled in Public`가 뜨면, 아래 SQL을 실행해 RLS를 켜야 합니다.
+
 ```sql
 alter table sos_notices enable row level security;
 alter table sos_joins enable row level security;
@@ -73,6 +76,21 @@ create policy "public insert bbs" on sos_bbs for insert with check (true);
 create policy "public read metrics" on sos_metrics for select using (true);
 create policy "public insert metrics" on sos_metrics for insert with check (true);
 create policy "public update metrics" on sos_metrics for update using (true) with check (true);
+```
+
+> 이미 정책을 만들었는데 다시 실행해야 한다면, 기존 정책을 삭제 후 다시 생성하세요.
+
+```sql
+drop policy if exists "public read notices" on sos_notices;
+drop policy if exists "public insert notices" on sos_notices;
+drop policy if exists "public read joins" on sos_joins;
+drop policy if exists "public insert joins" on sos_joins;
+drop policy if exists "public update joins" on sos_joins;
+drop policy if exists "public read bbs" on sos_bbs;
+drop policy if exists "public insert bbs" on sos_bbs;
+drop policy if exists "public read metrics" on sos_metrics;
+drop policy if exists "public insert metrics" on sos_metrics;
+drop policy if exists "public update metrics" on sos_metrics;
 ```
 
 ### 3) Project URL / Anon Key 찾기
